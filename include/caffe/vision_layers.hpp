@@ -146,7 +146,6 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
       vector<Blob<Dtype>*>* top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
-
   bool handles_setup_;
   cudnnHandle_t* handle_;
   cudaStream_t*  stream_;

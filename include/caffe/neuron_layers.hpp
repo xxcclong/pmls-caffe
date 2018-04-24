@@ -382,6 +382,7 @@ class CuDNNReLULayer : public ReLULayer<Dtype> {
   virtual ~CuDNNReLULayer();
 
  protected:
+  cudnnActivationDescriptor_t activ_desc_;
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,

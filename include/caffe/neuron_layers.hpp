@@ -470,6 +470,7 @@ class CuDNNSigmoidLayer : public SigmoidLayer<Dtype> {
   virtual ~CuDNNSigmoidLayer();
 
  protected:
+  cudnnActivationDescriptor_t activ_desc_;
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
@@ -559,6 +560,7 @@ class CuDNNTanHLayer : public TanHLayer<Dtype> {
   virtual ~CuDNNTanHLayer();
 
  protected:
+  cudnnActivationDescriptor_t activ_desc_;
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       vector<Blob<Dtype>*>* top);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,

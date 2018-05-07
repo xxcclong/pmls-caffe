@@ -13,6 +13,8 @@
 #include "caffe/loss_layers.hpp"
 #include "caffe/neuron_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/layers/base_conv_layer.hpp"
+
 
 namespace caffe {
 
@@ -32,132 +34,115 @@ namespace caffe {
  *   be filtered. col2im restores the output spatial structure by rolling up
  *   the output channel N' columns of the output matrix.
  */
-template <typename Dtype>
-class ConvolutionLayer : public Layer<Dtype> {
- public:
-  /**
-   * @param param provides ConvolutionParameter convolution_param,
-   *    with ConvolutionLayer options:
-   *  - num_output. The number of filters.
-   *  - kernel_size / kernel_h / kernel_w. The filter dimensions, given by
-   *  kernel_size for square filters or kernel_h and kernel_w for rectangular
-   *  filters.
-   *  - stride / stride_h / stride_w (\b optional, default 1). The filter
-   *  stride, given by stride_size for equal dimensions or stride_h and stride_w
-   *  for different strides. By default the convolution is dense with stride 1.
-   *  - pad / pad_h / pad_w (\b optional, default 0). The zero-padding for
-   *  convolution, given by pad for equal dimensions or pad_h and pad_w for
-   *  different padding. Input padding is computed implicitly instead of
-   *  actually padding.
-   *  - group (\b optional, default 1). The number of filter groups. Group
-   *  convolution is a method for reducing parameterization by selectively
-   *  connecting input and output channels. The input and output channel dimensions must be divisible
-   *  by the number of groups. For group @f$ \geq 1 @f$, the
-   *  convolutional filters' input and output channels are separated s.t. each
-   *  group takes 1 / group of the input channels and makes 1 / group of the
-   *  output channels. Concretely 4 input channels, 8 output channels, and
-   *  2 groups separate input channels 1-2 and output channels 1-4 into the
-   *  first group and input channels 3-4 and output channels 5-8 into the second
-   *  group.
-   *  - bias_term (\b optional, default true). Whether to have a bias.
-   *  - engine: convolution has CAFFE (matrix multiplication) and CUDNN (library
-   *    kernels + stream parallelism) engines.
-   */
-  explicit ConvolutionLayer(const LayerParameter& param)
-      : Layer<Dtype>(param) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
-      int* num_tables = NULL,
-      map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
+ template <typename Dtype>
+ class ConvolutionLayer : public BaseConvolutionLayer<Dtype>
+ {
+  public:
+   /**
+    * @param param provides ConvolutionParameter convolution_param,
+    *    with ConvolutionLayer options:
+    *  - num_output. The number of filters.
+    *  - kernel_size / kernel_h / kernel_w. The filter dimensions, given by
+    *  kernel_size for square filters or kernel_h and kernel_w for rectangular
+    *  filters.
+    *  - stride / stride_h / stride_w (\b optional, default 1). The filter
+    *  stride, given by stride_size for equal dimensions or stride_h and stride_w
+    *  for different strides. By default the convolution is dense with stride 1.
+    *  - pad / pad_h / pad_w (\b optional, default 0). The zero-padding for
+    *  convolution, given by pad for equal dimensions or pad_h and pad_w for
+    *  different padding. Input padding is computed implicitly instead of
+    *  actually padding.
+    *  - dilation (\b optional, default 1). The filter
+    *  dilation, given by dilation_size for equal dimensions for different
+    *  dilation. By default the convolution has dilation 1.
+    *  - group (\b optional, default 1). The number of filter groups. Group
+    *  convolution is a method for reducing parameterization by selectively
+    *  connecting input and output channels. The input and output channel dimensions must be divisible
+    *  by the number of groups. For group @f$ \geq 1 @f$, the
+    *  convolutional filters' input and output channels are separated s.t. each
+    *  group takes 1 / group of the input channels and makes 1 / group of the
+    *  output channels. Concretely 4 input channels, 8 output channels, and
+    *  2 groups separate input channels 1-2 and output channels 1-4 into the
+    *  first group and input channels 3-4 and output channels 5-8 into the second
+    *  group.
+    *  - bias_term (\b optional, default true). Whether to have a bias.
+    *  - engine: convolution has CAFFE (matrix multiplication) and CUDNN (library
+    *    kernels + stream parallelism) engines.
+    */
+   explicit ConvolutionLayer(const LayerParameter& param)
+       : BaseConvolutionLayer<Dtype>(param) {}
 
-  virtual inline LayerParameter_LayerType type() const {
-    return LayerParameter_LayerType_CONVOLUTION;
-  }
-  virtual inline int MinBottomBlobs() const { return 1; }
-  virtual inline int MinTopBlobs() const { return 1; }
-  virtual inline bool EqualNumBottomTopBlobs() const { return true; }
+   virtual inline const char* type() const { return "Convolution"; }
 
- protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
+  protected:
+   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+       const vector<Blob<Dtype>*>& top);
+   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+       const vector<Blob<Dtype>*>& top);
+   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+   virtual inline bool reverse_dimensions() { return false; }
+   virtual void compute_output_shape();
+ };
 
-  int kernel_h_, kernel_w_;
-  int stride_h_, stride_w_;
-  int num_;
-  int channels_;
-  int pad_h_, pad_w_;
-  int height_, width_;
-  int group_;
-  int num_output_;
-  int height_out_, width_out_;
-  bool bias_term_;
 
-  /// M_ is the channel dimension of the output for a single group, which is the
-  /// leading dimension of the filter matrix.
-  int M_;
-  /// K_ is the dimension of an unrolled input for a single group, which is the
-  /// leading dimension of the data matrix.
-  int K_;
-  /// N_ is the spatial dimension of the output, the H x W, which are the last
-  /// dimensions of the data and filter matrices.
-  int N_;
-  Blob<Dtype> col_buffer_;
-  Blob<Dtype> bias_multiplier_;
-};
+ #ifdef USE_CUDNN
+ /*
+  * @brief cuDNN implementation of ConvolutionLayer.
+  *        Fallback to ConvolutionLayer for CPU mode.
+  *
+  * cuDNN accelerates convolution through forward kernels for filtering and bias
+  * plus backward kernels for the gradient w.r.t. the filters, biases, and
+  * inputs. Caffe + cuDNN further speeds up the computation through forward
+  * parallelism across groups and backward parallelism across gradients.
+  *
+  * The CUDNN engine does not have memory overhead for matrix buffers. For many
+  * input and filter regimes the CUDNN engine is faster than the CAFFE engine,
+  * but for fully-convolutional models and large inputs the CAFFE engine can be
+  * faster as long as it fits in memory.
+ */
+ template <typename Dtype>
+ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
+  public:
+   explicit CuDNNConvolutionLayer(const LayerParameter& param)
+       : ConvolutionLayer<Dtype>(param), handles_setup_(false) {}
+   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+       const vector<Blob<Dtype>*>& top);
+   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+       const vector<Blob<Dtype>*>& top);
+   virtual ~CuDNNConvolutionLayer();
 
-#ifdef USE_CUDNN
-/*
- * @brief cuDNN implementation of ConvolutionLayer.
- *        Fallback to ConvolutionLayer for CPU mode.
- *
- * cuDNN accelerates convolution through forward kernels for filtering and bias
- * plus backward kernels for the gradient w.r.t. the filters, biases, and
- * inputs. Caffe + cuDNN further speeds up the computation through forward
- * parallelism across groups and backward parallelism across gradients.
- *
- * The CUDNN engine does not have memory overhead for matrix buffers. For many
- * input and filter regimes the CUDNN engine is faster than the CAFFE engine,
- * but for fully-convolutional models and large inputs the CAFFE engine can be
- * faster as long as it fits in memory.
-*/
-template <typename Dtype>
-class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
- public:
-  explicit CuDNNConvolutionLayer(const LayerParameter& param)
-      : ConvolutionLayer<Dtype>(param), handles_setup_(false) {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
-      int* num_tables = NULL,
-      map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-  virtual ~CuDNNConvolutionLayer();
+  protected:
+   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+       const vector<Blob<Dtype>*>& top);
+   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
- protected:
-  virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top);
-  virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, vector<Blob<Dtype>*>* bottom);
-  bool handles_setup_;
-  cudnnHandle_t* handle_;
-  cudaStream_t*  stream_;
-  vector<cudnnTensorDescriptor_t> bottom_descs_, top_descs_;
-  cudnnTensorDescriptor_t    bias_desc_;
-  cudnnFilterDescriptor_t      filter_desc_;
-  vector<cudnnConvolutionDescriptor_t> conv_descs_;
-  int bottom_offset_, top_offset_, weight_offset_, bias_offset_;
-  size_t workspaceSizeInBytes;
-  void *workspace;
-};
-#endif
+   bool handles_setup_;
+   cudnnHandle_t* handle_;
+   cudaStream_t*  stream_;
+
+   // algorithms for forward and backwards convolutions
+   cudnnConvolutionFwdAlgo_t *fwd_algo_;
+   cudnnConvolutionBwdFilterAlgo_t *bwd_filter_algo_;
+   cudnnConvolutionBwdDataAlgo_t *bwd_data_algo_;
+
+   vector<cudnnTensorDescriptor_t> bottom_descs_, top_descs_;
+   cudnnTensorDescriptor_t    bias_desc_;
+   cudnnFilterDescriptor_t      filter_desc_;
+   vector<cudnnConvolutionDescriptor_t> conv_descs_;
+   int bottom_offset_, top_offset_, bias_offset_;
+
+   size_t *workspace_fwd_sizes_;
+   size_t *workspace_bwd_data_sizes_;
+   size_t *workspace_bwd_filter_sizes_;
+   size_t workspaceSizeInBytes;  // size of underlying storage
+   void *workspaceData;  // underlying storage
+   void **workspace;  // aliases into workspaceData
+ };
+ #endif
 
 /**
  * @brief A helper for image operations that rearranges image regions into
@@ -172,7 +157,7 @@ class Im2colLayer : public Layer<Dtype> {
   explicit Im2colLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -216,7 +201,7 @@ class LRNLayer : public Layer<Dtype> {
   explicit LRNLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -295,7 +280,7 @@ class PoolingLayer : public Layer<Dtype> {
   explicit PoolingLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -344,7 +329,7 @@ class CuDNNPoolingLayer : public PoolingLayer<Dtype> {
   explicit CuDNNPoolingLayer(const LayerParameter& param)
       : PoolingLayer<Dtype>(param), handles_setup_(false) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,

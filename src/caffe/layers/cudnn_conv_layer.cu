@@ -107,7 +107,7 @@ void CuDNNConvolutionLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
 		  cudnn::dataType<Dtype>::one,
             filter_desc_, weight + weight_offset_ * g,
             top_descs_[i],    top_diff + top_offset_ * g,
-            conv_descs_[i],bwd_data_algo_[i], workspace[2*this->group_ + g],
+            conv_descs_[i],bwd_data_algo_[i], WORKSPACE[2*this->group_ + g],
               workspace_bwd_data_sizes_[i],
             cudnn::dataType<Dtype>::zero,
             bottom_descs_[i], bottom_diff + bottom_offset_ * g));

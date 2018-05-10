@@ -77,8 +77,7 @@ for ip in $unique_host_list; do
       GLOG_minloglevel=0 \
       GLOG_vmodule="" \
       $prog_path train \
-      --consistency_model $consistency_model \
-      --init_thread_access_table=true \
+      --consistency_model $consistency_model \ --init_thread_access_table=true \
       --hostfile $host_file \
       --client_id ${client_id} \
       --num_clients $num_unique_hosts \
@@ -94,7 +93,7 @@ for ip in $unique_host_list; do
       #--snapshot=${snapshot_filename}'"
 
  # ssh $ssh_options $ip bash -c $cmd &
-  echo $cmd
+  #echo $cmd
   eval $cmd  # Use this to run locally (on one machine).
 
   # Wait a few seconds for the name node (client 0) to set up

@@ -251,7 +251,6 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   PreSolve();
 
   util::Context& context = util::Context::get_instance();
-  LOG(INFO) << "finish get instance";
   // Register net output tables  
   if (thread_id_ == 0) {
     if (param_.display()) {
@@ -325,7 +324,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     net_->set_debug_info(display && param_.debug_info());
 
     Dtype loss = ForwardBackward(bottom_vec);
-    if (true) {
+    if (display) {
       if (client_id_ == 0 && thread_id_ == 0) {
         float time_elapsed = total_timer_.elapsed();
         /// Print the results of client 0 thread 0
@@ -397,7 +396,6 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   if (param_.test_interval() && iter_ % param_.test_interval() == 0) {
     TestAll();
   }
-  LOG(INFO) << "finish iteration***************************";
 }
 
 template <typename Dtype>

@@ -13,6 +13,8 @@
 #include "caffe/loss_layers.hpp"
 #include "caffe/neuron_layers.hpp"
 #include "caffe/proto/caffe.pb.h"
+#include "caffe/layers/base_conv_layer.hpp"
+
 
 namespace caffe {
 
@@ -32,6 +34,7 @@ namespace caffe {
  *   be filtered. col2im restores the output spatial structure by rolling up
  *   the output channel N' columns of the output matrix.
  */
+
 template <typename Dtype>
 class ConvolutionLayer : public Layer<Dtype> {
  public:
@@ -167,6 +170,7 @@ class CuDNNConvolutionLayer : public ConvolutionLayer<Dtype> {
 };
 #endif
 
+
 /**
  * @brief A helper for image operations that rearranges image regions into
  *        column vectors.  Used by ConvolutionLayer to perform convolution
@@ -180,7 +184,7 @@ class Im2colLayer : public Layer<Dtype> {
   explicit Im2colLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -224,7 +228,7 @@ class LRNLayer : public Layer<Dtype> {
   explicit LRNLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -303,7 +307,7 @@ class PoolingLayer : public Layer<Dtype> {
   explicit PoolingLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
@@ -352,7 +356,7 @@ class CuDNNPoolingLayer : public PoolingLayer<Dtype> {
   explicit CuDNNPoolingLayer(const LayerParameter& param)
       : PoolingLayer<Dtype>(param), handles_setup_(false) {}
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      vector<Blob<Dtype>*>* top, const bool init_ps = false, 
+      vector<Blob<Dtype>*>* top, const bool init_ps = false,
       int* num_tables = NULL,
       map<string, vector<int> >* layer_name_to_blob_global_idx = NULL);
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,

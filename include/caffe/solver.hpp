@@ -7,6 +7,7 @@
 #include <fstream>
 #include <petuum_ps_common/include/petuum_ps.hpp>
 #include "caffe/net.hpp"
+#include "caffe/ThreadPool.hpp"
 
 namespace caffe {
 
@@ -45,7 +46,7 @@ class Solver {
   // put up some scaffold.
   virtual void PreSolve() {}
   virtual void InitSVB();
-  virtual Dtype ForwardBackward(const vector<Blob<Dtype>* >& bottom);
+  virtual Dtype ForwardBackward(const vector<Blob<Dtype>* >& bottom, ThreadPool*);
   // Get the update value for the current iteration.
   virtual void ComputeUpdateValue(const int param_id) = 0;
   virtual void ComputeUpdateValue() = 0;

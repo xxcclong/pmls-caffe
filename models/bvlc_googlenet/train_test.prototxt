@@ -3,12 +3,14 @@ layers {
   top: "data"
   top: "label"
   name: "data"
-  type: DATA
-  data_param {
-    source: "POSEIDON_ROOT/example/imagenet/ilsvrc12_train_lmdb"
-    batch_size: 32
-    backend: LMDB
+  type: IMAGE_DATA
+  image_data_param {
+    source: "/home/kezhao/training_platform/pmls-caffe/models/bvlc_googlenet/meta/new_train.txt"
+    batch_size: 64
     shared_file_system: true
+    shuffle: true
+    new_width: 256
+    new_height: 256
   }
   include {
     phase: TRAIN
@@ -25,12 +27,14 @@ layers {
   top: "data"
   top: "label"
   name: "data"
-  type: DATA
-  data_param {
-    source: "POSEIDON_ROOT/example/imagenet/ilsvrc12_val_lmdb"
-    batch_size: 50
-    backend: LMDB
+  type: IMAGE_DATA
+  image_data_param {
+    source: "/home/kezhao/training_platform/pmls-caffe/models/bvlc_googlenet/meta/new_val.txt"
+    batch_size: 25
     shared_file_system: true
+    shuffle: true
+    new_width: 256
+    new_height: 256
   }
   include {
     phase: TEST

@@ -29,7 +29,7 @@ param_table_staleness=0
 num_comm_channels_per_client=8
 num_rows_per_table=32
 consistency_model="SSPPush"
-svb=true
+svb=false
 
 ##=====================================
 
@@ -93,7 +93,7 @@ for ip in $unique_host_list; do
       #--snapshot=${snapshot_filename}'"
 
   #ssh $ssh_options $ip $cmd &
-  ssh $ssh_options $ip bash -c $cmd &
+  ######ssh $ssh_options $ip bash -c $cmd &
   #eval $cmd  # Use this to run locally (on one machine).
 
   # Wait a few seconds for the name node (client 0) to set up

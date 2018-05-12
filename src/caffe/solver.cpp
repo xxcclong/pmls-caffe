@@ -307,8 +307,13 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   // For a network that is trained by the solver, no bottom or top vecs
   // should be given, and we will just provide dummy vecs.
   vector<Blob<Dtype>*> bottom_vec;
+  ThreadPool pool(150);
   for (; iter_ < param_.max_iter(); ++iter_) {
-    JoinSyncThreads();
+    //LOG(INFO) <<"begin join sync thread";
+//    std::cout << "iter_ " << iter_<<std::endl;
+    float before_join = total_timer_.elapsed();
+    //JoinSyncThreads();
+    //LOG(INFO) << "join sync thread " <<total_timer_.elapsed() - before_join;
     // Save a snapshot if needed.
     if (param_.snapshot() && iter_ > start_iter &&
         iter_ % param_.snapshot() == 0) {
@@ -322,8 +327,10 @@ void Solver<Dtype>::Solve(const char* resume_file) {
 
     const bool display = param_.display() && iter_ % param_.display() == 0;
     net_->set_debug_info(display && param_.debug_info());
-
-    Dtype loss = ForwardBackward(bottom_vec);
+    //LOG(INFO)<<"before forward backward";
+    float before_bf = total_timer_.elapsed();
+    Dtype loss = ForwardBackward(bottom_vec, &pool );
+    //LOG(INFO) <<"forward backward use time "<< total_timer_.elapsed() - before_bf;
     if (display) {
       if (client_id_ == 0 && thread_id_ == 0) {
         float time_elapsed = total_timer_.elapsed();
@@ -399,8 +406,8 @@ void Solver<Dtype>::Solve(const char* resume_file) {
 }
 
 template <typename Dtype>
-Dtype Solver<Dtype>::ForwardBackward(const vector<Blob<Dtype>* >& bottom) {
-  sync_threads_.clear();
+Dtype Solver<Dtype>::ForwardBackward(const vector<Blob<Dtype>* >& bottom, ThreadPool* pool) {
+//  sync_threads_.clear();
   Dtype loss;
 
   /// Forward
@@ -427,19 +434,22 @@ Dtype Solver<Dtype>::ForwardBackward(const vector<Blob<Dtype>* >& bottom) {
         for (int j = 0; j < layer_params_id.size(); ++j) {
           const int param_id = layer_params_id[j];
           const int param_owner = net_->param_owners()[param_id];
-          std::thread* sync_thread;
+          //std::thread* sync_thread;
           if (util::Context::use_svb()
               && type == LayerParameter_LayerType_INNER_PRODUCT
               && j == 0) { // weights of a inner product layer
-            sync_thread = new std::thread(&Solver::ThreadSyncWithSVB, this, 
+            //sync_thread = new std::thread
+	    pool->enqueue(&Solver::ThreadSyncWithSVB, this, 
                 net_->params()[param_id], param_id, layers[i], i, top_vecs[i],
                 bottom_vecs[i]);
           } else {
-            sync_thread = new std::thread(&Solver::ThreadSyncWithPS, this, 
-                net_->params()[param_id], param_id, param_owner,
-                clock_counter_ - param_table_staleness_);
+            //sync_thread = new std::thread
+            pool->enqueue([=] {
+		this->ThreadSyncWithPS(this->net_->params()[param_id], param_id, param_owner,
+                this->clock_counter_ - this->param_table_staleness_);
+});
           }
-          sync_threads_.push_back(sync_thread);
+          //sync_threads_.push_back(sync_thread);
         }
       }
     }
@@ -529,6 +539,7 @@ void Solver<Dtype>::ThreadSyncWithSVB(
 
 template <typename Dtype>
 void Solver<Dtype>::JoinSyncThreads() {
+   LOG(INFO) << "Thread Num" << sync_threads_.size();
   for (int i = 0; i < sync_threads_.size(); ++i) {
     sync_threads_[i]->join();
     delete sync_threads_[i];

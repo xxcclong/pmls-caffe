@@ -15,7 +15,7 @@
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/upgrade_proto.hpp"
 #include "caffe/sufficient_vector.hpp"
-
+#include "caffe/ThreadPool.hpp"
 namespace caffe {
 
 template <typename Dtype>
@@ -307,13 +307,40 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   // For a network that is trained by the solver, no bottom or top vecs
   // should be given, and we will just provide dummy vecs.
   vector<Blob<Dtype>*> bottom_vec;
-  ThreadPool pool(150);
+  std::condition_variable condition;
+  std::mutex MUTEX;
+  ThreadPool pool(150, &condition, &MUTEX);
   for (; iter_ < param_.max_iter(); ++iter_) {
     //LOG(INFO) <<"begin join sync thread";
 //    std::cout << "iter_ " << iter_<<std::endl;
+    if (client_id_ == 0 && thread_id_ == 0)
+    {
+	    LOG(INFO)<<"ITER " << iter_;
+    }
+
     float before_join = total_timer_.elapsed();
+   // LOG(INFO) << pool.running_task_num << " num";
+   
+    /*
+    while(true)
+    {
+	    if(pool.running_task_num == 0)
+		    break;
+
+    	//LOG(INFO) << pool.running_task_num << " whilenum";
+    }
+    */
+
+
     //JoinSyncThreads();
-    //LOG(INFO) << "join sync thread " <<total_timer_.elapsed() - before_join;
+    {
+	    std::unique_lock<std::mutex> lock(MUTEX);
+	    LOG(INFO) << " get mutex " << iter_ << " thread is " <<thread_id_ ;
+    	    LOG(INFO) << pool.running_task_num << " num in the mutex";
+	    condition.wait(lock, [&]{ return pool.running_task_num == 0;});
+    } 
+    condition.notify_all();
+    LOG(INFO) << "join sync thread " <<total_timer_.elapsed() - before_join;
     // Save a snapshot if needed.
     if (param_.snapshot() && iter_ > start_iter &&
         iter_ % param_.snapshot() == 0) {
@@ -330,7 +357,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
     //LOG(INFO)<<"before forward backward";
     float before_bf = total_timer_.elapsed();
     Dtype loss = ForwardBackward(bottom_vec, &pool );
-    //LOG(INFO) <<"forward backward use time "<< total_timer_.elapsed() - before_bf;
+    LOG(INFO) <<"forward backward use time "<< total_timer_.elapsed() - before_bf;
     if (display) {
       if (client_id_ == 0 && thread_id_ == 0) {
         float time_elapsed = total_timer_.elapsed();

@@ -8,7 +8,6 @@
 #include <petuum_ps_common/include/petuum_ps.hpp>
 #include "caffe/net.hpp"
 #include "caffe/ThreadPool.hpp"
-
 namespace caffe {
 
 /**
